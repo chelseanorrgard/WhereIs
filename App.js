@@ -1,20 +1,46 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import EntryScreen from './screens/EntryScreen';
+import ListItemsScreen from './screens/ListItemsScreen';
+import RecordCreationScreen from './screens/RecordCreationScreen';
+import ItemDetailScreen from './screens/ItemDetailScreen';
+
+const Stack = createStackNavigator();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator 
+        initialRouteName="Entry"
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#291528',
+          },
+          headerTintColor: '#fff',
+        }}
+      >
+        <Stack.Screen 
+          name="Entry" 
+          component={EntryScreen} 
+          options={{ title: 'WhereIs' }} 
+        />
+        <Stack.Screen 
+          name="ListItems" 
+          component={ListItemsScreen} 
+          options={{ title: 'My Items' }} 
+        />
+        <Stack.Screen 
+          name="RecordCreation" 
+          component={RecordCreationScreen} 
+          options={{ title: 'Add New Item' }} 
+        />
+        <Stack.Screen 
+          name="ItemDetail" 
+          component={ItemDetailScreen} 
+          options={{ title: 'Item Details' }} 
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

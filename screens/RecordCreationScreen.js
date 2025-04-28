@@ -22,49 +22,52 @@ const RecordCreationScreen = ({ navigation }) => {
   const [gpsLocation, setGpsLocation] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Request permission and take a photo
+  // Function to handle taking a photo
   const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Camera permission is required to take photos');
-      return;
-    }
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission required', 'Camera permission is needed to take a photo.');
+        return;
+      }
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.7,
-      base64: true,
-    });
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7,
+      });
 
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      if (!result.canceled && result.assets.length > 0) {
+        setImageUri(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Something went wrong when trying to take a photo.');
     }
   };
 
-  // Get current GPS location
-  const getGpsLocation = async () => {
+  // Function to get GPS location
+  const fetchGpsLocation = async () => {
     try {
       setLoading(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
-      
       if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Location permission is required to store GPS coordinates');
+        Alert.alert('Permission required', 'Location permission is needed to get your location.');
         setLoading(false);
         return;
       }
 
-      const location = await Location.getCurrentPositionAsync({});
+      const currentLocation = await Location.getCurrentPositionAsync({});
       setGpsLocation({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
       });
-      Alert.alert('Success', 'GPS location captured');
+
+      Alert.alert('Success', 'Location captured successfully!');
     } catch (error) {
-      Alert.alert('Error', 'Failed to get location');
-      console.error(error);
+      console.error('Error fetching GPS location:', error);
+      Alert.alert('Error', 'Could not fetch GPS location.');
     } finally {
       setLoading(false);
     }

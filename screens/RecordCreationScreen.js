@@ -167,7 +167,7 @@ const RecordCreationScreen = ({ navigation }) => {
       <View style={styles.mediaContainer}>
         <TouchableOpacity 
           style={styles.mediaButton} 
-          onPress={getGpsLocation}
+          onPress={fetchGpsLocation}
           disabled={loading}
         >
           <Text style={styles.mediaButtonText}>

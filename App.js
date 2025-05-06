@@ -23,7 +23,7 @@ export default function App() {
         <Stack.Screen 
           name="Entry" 
           component={EntryScreen} 
-          options={{ title: 'WhereIs' }} 
+          options={{ title: 'Where the #?@% Is' }} 
         />
         <Stack.Screen 
           name="ListItems" 

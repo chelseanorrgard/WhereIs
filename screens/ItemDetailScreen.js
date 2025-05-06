@@ -107,12 +107,21 @@ const ItemDetailScreen = ({ route, navigation }) => {
             <Text style={styles.detailValue}>{item.location}</Text>
           </View>
         )}
-        
+      
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Description:</Text>
           <Text style={styles.detailValue}>{item.description}</Text>
         </View>
       </View>
+
+      {item.gpsLocation && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>GPS Location:</Text>
+            <Text style={styles.detailValue}>
+              {item.gpsLocation.latitude}, {item.gpsLocation.longitude}
+            </Text>
+          </View>
+        )}
       
       {item.gpsLocation && (
         <TouchableOpacity style={styles.mapButton} onPress={openMap}>
@@ -212,11 +221,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   editButton: {
-    backgroundColor: '#3d5a80',
+    backgroundColor: '#6936d4',
     marginRight: 8,
   },
   deleteButton: {
-    backgroundColor: '#9e2a2b',
+    backgroundColor: '#ff6b81',
     marginLeft: 8,
   },
   buttonText: {

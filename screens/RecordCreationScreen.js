@@ -39,7 +39,7 @@ const RecordCreationScreen = ({ navigation }) => {
       });
 
       if (!result.canceled && result.assets.length > 0) {
-        setImageUri(result.assets[0].uri);
+        setImage(result.assets[0].uri);
       }
     } catch (error) {
       console.error('Error taking photo:', error);

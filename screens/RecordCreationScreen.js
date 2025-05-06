@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -12,15 +12,51 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { saveItem } from '../services/storage';
+import { saveItem, getItemById, updateItem } from '../services/storage';
 
-const RecordCreationScreen = ({ navigation }) => {
+const RecordCreationScreen = ({ navigation, route }) => {
+  // Check if we're in edit mode by looking for itemId in route params
+  const { itemId } = route.params || {};
+  const isEditMode = !!itemId;
+  
   const [itemName, setItemName] = useState('');
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState(null);
   const [gpsLocation, setGpsLocation] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(isEditMode);
+
+  // If in edit mode, load the existing item data
+  useEffect(() => {
+    const loadItemData = async () => {
+      if (isEditMode) {
+        try {
+          setInitialLoading(true);
+          const item = await getItemById(itemId);
+          
+          if (item) {
+            setItemName(item.name || '');
+            setLocation(item.location || '');
+            setDescription(item.description || '');
+            setImage(item.imageUri || null);
+            setGpsLocation(item.gpsLocation || null);
+          } else {
+            Alert.alert('Error', 'Item not found');
+            navigation.goBack();
+          }
+        } catch (error) {
+          console.error('Error loading item for edit:', error);
+          Alert.alert('Error', 'Failed to load item data');
+          navigation.goBack();
+        } finally {
+          setInitialLoading(false);
+        }
+      }
+    };
+
+    loadItemData();
+  }, [itemId, isEditMode]);
 
   // Function to handle taking a photo
   const takePhoto = async () => {
@@ -44,6 +80,31 @@ const RecordCreationScreen = ({ navigation }) => {
     } catch (error) {
       console.error('Error taking photo:', error);
       Alert.alert('Error', 'Something went wrong when trying to take a photo.');
+    }
+  };
+  
+  // Function to pick a photo from library
+  const pickPhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission required', 'Media library permission is needed to pick a photo.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7,
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking photo:', error);
+      Alert.alert('Error', 'Something went wrong when trying to pick a photo.');
     }
   };
 
@@ -84,7 +145,7 @@ const RecordCreationScreen = ({ navigation }) => {
       setLoading(true);
       
       // Create the item object
-      const newItem = {
+      const itemData = {
         name: itemName.trim(),
         location: location.trim(),
         description: description.trim(),
@@ -92,30 +153,65 @@ const RecordCreationScreen = ({ navigation }) => {
         gpsLocation: gpsLocation,
       };
       
-      // Save to local storage
-      await saveItem(newItem);
+      let result;
       
-      Alert.alert(
-        'Success', 
-        'Item saved successfully',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack()
-          }
-        ]
-      );
+      if (isEditMode) {
+        // Update existing item
+        result = await updateItem({
+          ...itemData,
+          id: itemId, // Include the original ID for updating
+        });
+        
+        Alert.alert(
+          'Success', 
+          'Item updated successfully',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.navigate('ItemDetail', { itemId })
+            }
+          ]
+        );
+      } else {
+        // Save new item
+        result = await saveItem(itemData);
+        
+        Alert.alert(
+          'Success', 
+          'Item saved successfully',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack()
+            }
+          ]
+        );
+      }
     } catch (error) {
-      Alert.alert('Error', 'Failed to save item');
+      Alert.alert('Error', isEditMode ? 'Failed to update item' : 'Failed to save item');
       console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
+  // Function to remove the current photo
+  const removePhoto = () => {
+    setImage(null);
+  };
+
+  if (initialLoading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color="#ffffff" />
+        <Text style={styles.loadingText}>Loading item data...</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Add New Item</Text>
+      <Text style={styles.title}>{isEditMode ? 'Edit Item' : 'Add New Item'}</Text>
       
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Item Name *</Text>
@@ -154,12 +250,23 @@ const RecordCreationScreen = ({ navigation }) => {
       
       {/* Image Picker */}
       <View style={styles.mediaContainer}>
-        <TouchableOpacity style={styles.mediaButton} onPress={takePhoto}>
-          <Text style={styles.mediaButtonText}>Take Photo</Text>
-        </TouchableOpacity>
+        <View style={styles.mediaButtonRow}>
+          <TouchableOpacity style={styles.mediaButton} onPress={takePhoto}>
+            <Text style={styles.mediaButtonText}>Take Photo</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.mediaButton} onPress={pickPhoto}>
+            <Text style={styles.mediaButtonText}>Choose Photo</Text>
+          </TouchableOpacity>
+        </View>
         
         {image && (
-          <Image source={{ uri: image }} style={styles.previewImage} />
+          <View style={styles.imageContainer}>
+            <Image source={{ uri: image }} style={styles.previewImage} />
+            <TouchableOpacity style={styles.removePhotoButton} onPress={removePhoto}>
+              <Text style={styles.removePhotoText}>✕</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
       
@@ -204,6 +311,10 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#291528',
   },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -234,12 +345,20 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     alignItems: 'center',
   },
+  mediaButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 10,
+  },
   mediaButton: {
     backgroundColor: '#6a3b63',
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 20,
     marginBottom: 10,
+    flex: 1,
+    marginHorizontal: 5,
   },
   mediaButtonText: {
     color: '#ffffff',
@@ -247,11 +366,30 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
+  imageContainer: {
+    position: 'relative',
+    marginTop: 10,
+  },
   previewImage: {
     width: 200,
     height: 200,
     borderRadius: 8,
-    marginTop: 10,
+  },
+  removePhotoButton: {
+    position: 'absolute',
+    top: -10,
+    right: -10,
+    backgroundColor: '#ff6b81',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removePhotoText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   locationText: {
     color: '#ffffff',
@@ -276,6 +414,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
     marginBottom: 10,
+  },
+  loadingText: {
+    color: '#ffffff',
+    marginTop: 10,
+    fontSize: 16,
   },
 });
 

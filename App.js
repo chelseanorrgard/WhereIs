@@ -33,7 +33,9 @@ export default function App() {
         <Stack.Screen 
           name="RecordCreation" 
           component={RecordCreationScreen} 
-          options={{ title: 'Add New Item' }} 
+          options={({ route }) => ({ 
+            title: route.params?.itemId ? 'Edit Item' : 'Add New Item' 
+          })} 
         />
         <Stack.Screen 
           name="ItemDetail" 

@@ -17,6 +17,15 @@ const ItemDetailScreen = ({ route, navigation }) => {
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Set the navigation title dynamically when item loads
+  useEffect(() => {
+    if (item) {
+      navigation.setOptions({
+        title: item.name,
+      });
+    }
+  }, [item, navigation]);
+
   useEffect(() => {
     loadItem();
   }, [itemId]);
@@ -62,6 +71,11 @@ const ItemDetailScreen = ({ route, navigation }) => {
     );
   };
 
+  const handleEdit = () => {
+    // Navigate to RecordCreation screen with the itemId parameter
+    navigation.navigate('RecordCreation', { itemId: itemId });
+  };
+
   const openMap = () => {
     if (item?.gpsLocation) {
       const { latitude, longitude } = item.gpsLocation;
@@ -88,6 +102,13 @@ const ItemDetailScreen = ({ route, navigation }) => {
     );
   }
 
+  // Format the dates if available
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{item.name}</Text>
@@ -112,27 +133,41 @@ const ItemDetailScreen = ({ route, navigation }) => {
           <Text style={styles.detailLabel}>Description:</Text>
           <Text style={styles.detailValue}>{item.description}</Text>
         </View>
+
+        {item.createdAt && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Created:</Text>
+            <Text style={styles.detailValue}>{formatDate(item.createdAt)}</Text>
+          </View>
+        )}
+
+        {item.updatedAt && item.updatedAt !== item.createdAt && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Last Updated:</Text>
+            <Text style={styles.detailValue}>{formatDate(item.updatedAt)}</Text>
+          </View>
+        )}
       </View>
 
       {item.gpsLocation && (
+        <View style={styles.gpsContainer}>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>GPS Location:</Text>
             <Text style={styles.detailValue}>
-              {item.gpsLocation.latitude}, {item.gpsLocation.longitude}
+              {item.gpsLocation.latitude.toFixed(6)}, {item.gpsLocation.longitude.toFixed(6)}
             </Text>
           </View>
-        )}
-      
-      {item.gpsLocation && (
-        <TouchableOpacity style={styles.mapButton} onPress={openMap}>
-          <Text style={styles.buttonText}>View on Map</Text>
-        </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.mapButton} onPress={openMap}>
+            <Text style={styles.buttonText}>View on Map</Text>
+          </TouchableOpacity>
+        </View>
       )}
       
       <View style={styles.actionsContainer}>
         <TouchableOpacity 
           style={[styles.actionButton, styles.editButton]}
-          onPress={() => navigation.navigate('EditItem', { itemId: item.id })}
+          onPress={handleEdit}
         >
           <Text style={styles.buttonText}>Edit</Text>
         </TouchableOpacity>
@@ -190,6 +225,12 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 20,
   },
+  gpsContainer: {
+    backgroundColor: '#3d2038',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 20,
+  },
   detailRow: {
     marginBottom: 12,
   },
@@ -208,7 +249,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: 'center',
-    marginBottom: 20,
+    marginTop: 8,
   },
   actionsContainer: {
     flexDirection: 'row',

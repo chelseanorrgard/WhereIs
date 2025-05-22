@@ -16,32 +16,32 @@ const CustomHeader = ({ title, navigation, route }) => {
   return (
     <View style={styles.headerContainer}>
       <Text style={styles.headerTitle}>{title}</Text>
-      <View style={styles.headerButtons}>
-        {currentRouteName !== 'Entry' && (
+      {currentRouteName !== 'Entry' && (
+        <View style={styles.headerButtons}>
           <TouchableOpacity 
             style={styles.headerButton}
             onPress={() => navigation.navigate('Entry')}
           >
             <Text style={styles.headerButtonText}>Home</Text>
           </TouchableOpacity>
-        )}
-        {currentRouteName !== 'ListItems' && (
-          <TouchableOpacity 
-            style={styles.headerButton}
-            onPress={() => navigation.navigate('ListItems')}
-          >
-            <Text style={styles.headerButtonText}>List</Text>
-          </TouchableOpacity>
-        )}
-        {currentRouteName !== 'RecordCreation' && (
-          <TouchableOpacity 
-            style={styles.headerButton}
-            onPress={() => navigation.navigate('RecordCreation')}
-          >
-            <Text style={styles.headerButtonText}>Add</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+          {currentRouteName !== 'ListItems' && (
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => navigation.navigate('ListItems')}
+            >
+              <Text style={styles.headerButtonText}>List</Text>
+            </TouchableOpacity>
+          )}
+          {currentRouteName !== 'RecordCreation' && (
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => navigation.navigate('RecordCreation')}
+            >
+              <Text style={styles.headerButtonText}>Add</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
     </View>
   );
 };

@@ -138,66 +138,88 @@ const RecordCreationScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleSave = async () => {
-    // Validate mandatory fields
-    if (itemName.trim() === '' || description.trim() === '') {
-      Alert.alert('Error', 'Item name and description are required');
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      
-      // Create the item object
-      const itemData = {
-        name: itemName.trim(),
-        location: location.trim(),
-        description: description.trim(),
-        imageUri: image,
-        gpsLocation: gpsLocation,
-      };
-      
-      let result;
-      
-      if (isEditMode) {
-        // Update existing item
-        result = await updateItem({
-          ...itemData,
-          id: itemId, // Include the original ID for updating
-        });
-        
-        Alert.alert(
-          'Success', 
-          'Item updated successfully',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.navigate('ItemDetail', { itemId })
+const handleSave = async () => {
+  // Validate mandatory fields
+  if (itemName.trim() === '' || description.trim() === '') {
+    Alert.alert('Error', 'Item name and description are required');
+    return;
+  }
+  
+  // Show confirmation dialog before saving/updating
+  const confirmMessage = isEditMode 
+    ? 'Are you sure you want to update this item?' 
+    : 'Are you sure you want to save this new item?';
+  
+  const confirmButtonText = isEditMode ? 'Update' : 'Save';
+  
+  Alert.alert(
+    'Confirm Action',
+    confirmMessage,
+    [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: confirmButtonText,
+        onPress: async () => {
+          try {
+            setLoading(true);
+            
+            // Create the item object
+            const itemData = {
+              name: itemName.trim(),
+              location: location.trim(),
+              description: description.trim(),
+              imageUri: image,
+              gpsLocation: gpsLocation,
+            };
+            
+            let result;
+            
+            if (isEditMode) {
+              // Update existing item
+              result = await updateItem({
+                ...itemData,
+                id: itemId, // Include the original ID for updating
+              });
+              
+              Alert.alert(
+                'Success', 
+                'Item updated successfully',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => navigation.navigate('ItemDetail', { itemId })
+                  }
+                ]
+              );
+            } else {
+              // Save new item
+              result = await saveItem(itemData);
+              
+              Alert.alert(
+                'Success', 
+                'Item saved successfully',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => navigation.navigate('Entry')
+                  }
+                ]
+              );
             }
-          ]
-        );
-      } else {
-        // Save new item
-        result = await saveItem(itemData);
-        
-        Alert.alert(
-          'Success', 
-          'Item saved successfully',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.navigate('Entry')
-            }
-          ]
-        );
+          } catch (error) {
+            Alert.alert('Error', isEditMode ? 'Failed to update item' : 'Failed to save item');
+            console.error(error);
+          } finally {
+            setLoading(false);
+          }
+        }
       }
-    } catch (error) {
-      Alert.alert('Error', isEditMode ? 'Failed to update item' : 'Failed to save item');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    ]
+  );
+};
 
   // Function to remove the current photo
   const removePhoto = () => {

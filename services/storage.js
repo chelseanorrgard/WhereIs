@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import * as FileSystem from 'expo-file-system';
 
 // Constants
@@ -57,7 +57,7 @@ export const saveItem = async (item) => {
  */
 export const getAllItems = async () => {
   try {
-    const itemsJson = await AsyncStorage.getItem(STORAGE_KEY);
+    const itemsJson = await SecureStore.getItemAsync(STORAGE_KEY);
     
     // If no items found, check if we have a backup
     if (!itemsJson) {
@@ -278,11 +278,11 @@ const generateUniqueId = () => {
 const saveItemsWithVerification = async (items) => {
   const itemsJson = JSON.stringify(items);
   
-  // Save to AsyncStorage
-  await AsyncStorage.setItem(STORAGE_KEY, itemsJson);
+  // Save to SecureStore (encrypted)
+  await SecureStore.setItemAsync(STORAGE_KEY, itemsJson);
   
   // Verify the data was saved correctly
-  const verificationJson = await AsyncStorage.getItem(STORAGE_KEY);
+  const verificationJson = await SecureStore.getItemAsync(STORAGE_KEY);
   
   if (verificationJson !== itemsJson) {
     throw new Error('Data integrity verification failed');

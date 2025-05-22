@@ -8,11 +8,15 @@ import {
   Image,
   ScrollView,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  SafeAreaView,
+  Dimensions
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { saveItem, getItemById, updateItem } from '../services/storage';
+
+const { width } = Dimensions.get('window');
 
 const RecordCreationScreen = ({ navigation, route }) => {
   // Check if we're in edit mode by looking for itemId in route params
@@ -182,7 +186,7 @@ const RecordCreationScreen = ({ navigation, route }) => {
           [
             {
               text: 'OK',
-              onPress: () => navigation.goBack()
+              onPress: () => navigation.navigate('Entry')
             }
           ]
         );
@@ -202,128 +206,127 @@ const RecordCreationScreen = ({ navigation, route }) => {
 
   if (initialLoading) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
+      <SafeAreaView style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color="#ffffff" />
         <Text style={styles.loadingText}>Loading item data...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{isEditMode ? 'Edit Item' : 'Add New Item'}</Text>
-      
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Item Name *</Text>
-        <TextInput
-          style={styles.input}
-          value={itemName}
-          onChangeText={setItemName}
-          placeholder="Enter item name"
-          placeholderTextColor="#aaa"
-        />
-      </View>
-      
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Location</Text>
-        <TextInput
-          style={styles.input}
-          value={location}
-          onChangeText={setLocation}
-          placeholder="Where is it located?"
-          placeholderTextColor="#aaa"
-        />
-      </View>
-      
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Description *</Text>
-        <TextInput
-          style={[styles.input, styles.multilineInput]}
-          value={description}
-          onChangeText={setDescription}
-          placeholder="Add details about the item and its location"
-          placeholderTextColor="#aaa"
-          multiline
-          numberOfLines={4}
-        />
-      </View>
-      
-      {/* Image Picker */}
-      <View style={styles.mediaContainer}>
-        <View style={styles.mediaButtonRow}>
-          <TouchableOpacity style={styles.mediaButton} onPress={takePhoto}>
-            <Text style={styles.mediaButtonText}>Take Photo</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.mediaButton} onPress={pickPhoto}>
-            <Text style={styles.mediaButtonText}>Choose Photo</Text>
-          </TouchableOpacity>
+    <SafeAreaView style={styles.container}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Item Name *</Text>
+          <TextInput
+            style={styles.input}
+            value={itemName}
+            onChangeText={setItemName}
+            placeholder="Enter item name"
+            placeholderTextColor="#aaa"
+          />
         </View>
         
-        {image && (
-          <View style={styles.imageContainer}>
-            <Image source={{ uri: image }} style={styles.previewImage} />
-            <TouchableOpacity style={styles.removePhotoButton} onPress={removePhoto}>
-              <Text style={styles.removePhotoText}>✕</Text>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Location</Text>
+          <TextInput
+            style={styles.input}
+            value={location}
+            onChangeText={setLocation}
+            placeholder="Where is it located?"
+            placeholderTextColor="#aaa"
+          />
+        </View>
+        
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Description *</Text>
+          <TextInput
+            style={[styles.input, styles.multilineInput]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Add details about the item and its location"
+            placeholderTextColor="#aaa"
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+        
+        {/* Image Picker */}
+        <View style={styles.mediaContainer}>
+          <View style={styles.mediaButtonRow}>
+            <TouchableOpacity style={styles.mediaButton} onPress={takePhoto}>
+              <Text style={styles.mediaButtonText}>Take Photo</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.mediaButton} onPress={pickPhoto}>
+              <Text style={styles.mediaButtonText}>Choose Photo</Text>
             </TouchableOpacity>
           </View>
-        )}
-      </View>
-      
-      {/* GPS Location */}
-      <View style={styles.mediaContainer}>
-        <TouchableOpacity 
-          style={styles.mediaButton} 
-          onPress={fetchGpsLocation}
-          disabled={loading}
-        >
-          <Text style={styles.mediaButtonText}>
-            {gpsLocation ? 'Update Location' : 'Get GPS Location'}
-          </Text>
-        </TouchableOpacity>
+          
+          {image && (
+            <View style={styles.imageContainer}>
+              <Image source={{ uri: image }} style={styles.previewImage} />
+              <TouchableOpacity style={styles.removePhotoButton} onPress={removePhoto}>
+                <Text style={styles.removePhotoText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
         
-        {gpsLocation && (
-          <Text style={styles.locationText}>
-            Location captured: {gpsLocation.latitude.toFixed(4)}, {gpsLocation.longitude.toFixed(4)}
-          </Text>
+        {/* GPS Location */}
+        <View style={styles.mediaContainer}>
+          <TouchableOpacity 
+            style={[styles.mediaButton, styles.fullWidthButton]} 
+            onPress={fetchGpsLocation}
+            disabled={loading}
+          >
+            <Text style={styles.mediaButtonText}>
+              {gpsLocation ? 'Update Location' : 'Get GPS Location'}
+            </Text>
+          </TouchableOpacity>
+          
+          {gpsLocation && (
+            <Text style={styles.locationText}>
+              Location captured: {gpsLocation.latitude.toFixed(4)}, {gpsLocation.longitude.toFixed(4)}
+            </Text>
+          )}
+        </View>
+        
+        {loading ? (
+          <ActivityIndicator size="large" color="#ffffff" style={styles.loader} />
+        ) : (
+          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+            <Image 
+              source={require('../assets/save.png')} 
+              style={styles.buttonImage} 
+            />
+          </TouchableOpacity>
         )}
-      </View>
-      
-      {loading ? (
-        <ActivityIndicator size="large" color="#ffffff" style={styles.loader} />
-      ) : (
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Image 
-            source={require('../assets/save.png')} 
-            style={styles.buttonImage} 
-          />
-        </TouchableOpacity>
-      )}
-      
-      <Text style={styles.requiredNote}>* Required fields</Text>
-    </ScrollView>
+        
+        <Text style={styles.requiredNote}>* Required fields</Text>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    padding: 20,
+    flex: 1,
     backgroundColor: '#291528',
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
   },
   centerContent: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 30,
-    textAlign: 'center',
-  },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   label: {
     fontSize: 16,
@@ -338,82 +341,85 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   multilineInput: {
-    minHeight: 100,
+    minHeight: 80,
     textAlignVertical: 'top',
   },
   mediaContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
     alignItems: 'center',
   },
   mediaButtonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   mediaButton: {
     backgroundColor: '#6a3b63',
     borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    marginBottom: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     flex: 1,
-    marginHorizontal: 5,
+    marginHorizontal: 4,
+  },
+  fullWidthButton: {
+    marginHorizontal: 0,
   },
   mediaButtonText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     textAlign: 'center',
   },
   imageContainer: {
     position: 'relative',
-    marginTop: 10,
+    marginTop: 8,
   },
   previewImage: {
-    width: 200,
-    height: 200,
+    width: Math.min(width - 60, 200),
+    height: Math.min(width - 60, 200),
     borderRadius: 8,
   },
   removePhotoButton: {
     position: 'absolute',
-    top: -10,
-    right: -10,
+    top: -8,
+    right: -8,
     backgroundColor: '#ff6b81',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   removePhotoText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   locationText: {
     color: '#ffffff',
     marginTop: 5,
+    fontSize: 12,
+    textAlign: 'center',
   },
   saveButton: {
     alignSelf: 'center',
-    marginTop: 20,
-    padding: 10,
+    marginTop: 16,
+    padding: 8,
   },
   buttonImage: {
-    width: 200,
-    height: 80,
+    width: Math.min(width * 0.6, 160),
+    height: 60,
     resizeMode: 'contain',
   },
   loader: {
-    marginTop: 20,
+    marginTop: 16,
   },
   requiredNote: {
     color: '#ffffff',
     fontSize: 12,
     textAlign: 'center',
-    marginTop: 20,
-    marginBottom: 10,
+    marginTop: 16,
   },
   loadingText: {
     color: '#ffffff',

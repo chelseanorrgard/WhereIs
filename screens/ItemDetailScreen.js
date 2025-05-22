@@ -8,9 +8,13 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
-  ActivityIndicator
+  ActivityIndicator,
+  SafeAreaView,
+  Dimensions
 } from 'react-native';
 import { getItemById, deleteItem } from '../services/storage';
+
+const { width } = Dimensions.get('window');
 
 const ItemDetailScreen = ({ route, navigation }) => {
   const { itemId } = route.params;
@@ -38,7 +42,7 @@ const ItemDetailScreen = ({ route, navigation }) => {
         setItem(fetchedItem);
       } else {
         Alert.alert('Error', 'Item not found');
-        navigation.goBack();
+        navigation.navigate('ListItems');
       }
     } catch (error) {
       console.error('Error loading item:', error);
@@ -61,7 +65,7 @@ const ItemDetailScreen = ({ route, navigation }) => {
             try {
               await deleteItem(itemId);
               Alert.alert('Success', 'Item deleted successfully');
-              navigation.goBack();
+              navigation.navigate('ListItems');
             } catch (error) {
               Alert.alert('Error', 'Failed to delete item');
             }
@@ -88,17 +92,17 @@ const ItemDetailScreen = ({ route, navigation }) => {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
+      <SafeAreaView style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color="#ffffff" />
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (!item) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
+      <SafeAreaView style={[styles.container, styles.centerContent]}>
         <Text style={styles.errorText}>Item not found</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -110,110 +114,118 @@ const ItemDetailScreen = ({ route, navigation }) => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{item.name}</Text>
-      
-      {item.imageUri ? (
-        <Image source={{ uri: item.imageUri }} style={styles.image} />
-      ) : (
-        <View style={styles.noImage}>
-          <Text style={styles.noImageText}>No Image Available</Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.title}>{item.name}</Text>
+        
+        {item.imageUri ? (
+          <Image source={{ uri: item.imageUri }} style={styles.image} />
+        ) : (
+          <View style={styles.noImage}>
+            <Text style={styles.noImageText}>No Image Available</Text>
+          </View>
+        )}
+        
+        <View style={styles.detailsContainer}>
+          {item.location && (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Location:</Text>
+              <Text style={styles.detailValue}>{item.location}</Text>
+            </View>
+          )}
+        
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Description:</Text>
+            <Text style={styles.detailValue}>{item.description}</Text>
+          </View>
+
+          {item.createdAt && (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Created:</Text>
+              <Text style={styles.detailValue}>{formatDate(item.createdAt)}</Text>
+            </View>
+          )}
+
+          {item.updatedAt && item.updatedAt !== item.createdAt && (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Last Updated:</Text>
+              <Text style={styles.detailValue}>{formatDate(item.updatedAt)}</Text>
+            </View>
+          )}
         </View>
-      )}
-      
-      <View style={styles.detailsContainer}>
-        {item.location && (
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Location:</Text>
-            <Text style={styles.detailValue}>{item.location}</Text>
+
+        {item.gpsLocation && (
+          <View style={styles.gpsContainer}>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>GPS Location:</Text>
+              <Text style={styles.detailValue}>
+                {item.gpsLocation.latitude.toFixed(6)}, {item.gpsLocation.longitude.toFixed(6)}
+              </Text>
+            </View>
+            
+            <TouchableOpacity style={styles.mapButton} onPress={openMap}>
+              <Text style={styles.buttonText}>View on Map</Text>
+            </TouchableOpacity>
           </View>
         )}
-      
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Description:</Text>
-          <Text style={styles.detailValue}>{item.description}</Text>
-        </View>
-
-        {item.createdAt && (
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Created:</Text>
-            <Text style={styles.detailValue}>{formatDate(item.createdAt)}</Text>
-          </View>
-        )}
-
-        {item.updatedAt && item.updatedAt !== item.createdAt && (
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Last Updated:</Text>
-            <Text style={styles.detailValue}>{formatDate(item.updatedAt)}</Text>
-          </View>
-        )}
-      </View>
-
-      {item.gpsLocation && (
-        <View style={styles.gpsContainer}>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>GPS Location:</Text>
-            <Text style={styles.detailValue}>
-              {item.gpsLocation.latitude.toFixed(6)}, {item.gpsLocation.longitude.toFixed(6)}
-            </Text>
-          </View>
+        
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.editButton]}
+            onPress={handleEdit}
+          >
+            <Text style={styles.buttonText}>Edit</Text>
+          </TouchableOpacity>
           
-          <TouchableOpacity style={styles.mapButton} onPress={openMap}>
-            <Text style={styles.buttonText}>View on Map</Text>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.deleteButton]}
+            onPress={handleDelete}
+          >
+            <Text style={styles.buttonText}>Delete</Text>
           </TouchableOpacity>
         </View>
-      )}
-      
-      <View style={styles.actionsContainer}>
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.editButton]}
-          onPress={handleEdit}
-        >
-          <Text style={styles.buttonText}>Edit</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.deleteButton]}
-          onPress={handleDelete}
-        >
-          <Text style={styles.buttonText}>Delete</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
     backgroundColor: '#291528',
+  },
+  scrollContent: {
     padding: 16,
+    paddingBottom: 40,
   },
   centerContent: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#ffffff',
-    marginBottom: 20,
+    marginBottom: 16,
     textAlign: 'center',
   },
   image: {
     width: '100%',
-    height: 250,
+    height: Math.min(width - 32, 200),
     borderRadius: 8,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   noImage: {
     width: '100%',
-    height: 200,
+    height: 150,
     backgroundColor: '#3d2038',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   noImageText: {
     color: '#aaaaaa',
@@ -223,13 +235,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#3d2038',
     borderRadius: 8,
     padding: 16,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   gpsContainer: {
     backgroundColor: '#3d2038',
     borderRadius: 8,
     padding: 16,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   detailRow: {
     marginBottom: 12,
@@ -254,6 +266,7 @@ const styles = StyleSheet.create({
   actionsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 8,
   },
   actionButton: {
     flex: 1,

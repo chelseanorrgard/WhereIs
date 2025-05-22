@@ -77,87 +77,78 @@ const EntryScreen = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        {showSearchResults ? (
-          <>
-            {/* Search Bar */}
-            <View style={styles.searchContainer}>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search for items..."
-                placeholderTextColor="#aaa"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                returnKeyType="search"
-              />
-            </View>
+<SafeAreaView style={styles.container}>
+  <View style={styles.content}>
+    {/* Logo */}
+    <View style={styles.logoContainer}>
+      <Image 
+        source={require('../assets/where.png')} 
+        style={[styles.logo, { width: logoSize, height: logoSize }]} 
+      />
+    </View>
 
-            {/* Search Results */}
-            <View style={styles.searchResultsContainer}>
-              <Text style={styles.searchResultsTitle}>
-                Search Results ({filteredItems.length})
-              </Text>
-              <FlatList
-                data={filteredItems}
-                renderItem={renderSearchResult}
-                keyExtractor={(item) => item.id.toString()}
-                style={styles.searchResultsList}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={
-                  <Text style={styles.noResultsText}>No items found</Text>
-                }
-              />
-            </View>
-          </>
-        ) : (
-          <>
-            {/* Logo */}
-            <View style={styles.logoContainer}>
-              <Image 
-                source={require('../assets/where.png')} 
-                style={[styles.logo, { width: logoSize, height: logoSize }]} 
-              />
-            </View>
-
-            {/* Search Bar (moved below logo) */}
-            <View style={styles.searchContainer}>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search for items..."
-                placeholderTextColor="#aaa"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                returnKeyType="search"
-              />
-            </View>
-
-            {/* Buttons */}
-            <View style={styles.buttonsContainer}>
-              <TouchableOpacity 
-                style={styles.button}
-                onPress={() => navigation.navigate('RecordCreation')}
-              >
-                <Image 
-                  source={require('../assets/add.png')} 
-                  style={[styles.buttonImage, { width: buttonWidth }]} 
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={styles.button}
-                onPress={() => navigation.navigate('ListItems')}
-              >
-                <Image 
-                  source={require('../assets/list.png')} 
-                  style={[styles.buttonImage, { width: buttonWidth }]} 
-                />
-              </TouchableOpacity>
-            </View>
-          </>
+    {/* Search Bar */}
+    <View style={styles.searchContainer}>
+      <View style={styles.searchInputWrapper}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search for items..."
+          placeholderTextColor="#aaa"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          returnKeyType="search"
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
+            <Text style={styles.clearButtonText}>×</Text>
+          </TouchableOpacity>
         )}
       </View>
-    </SafeAreaView>
+    </View>
+
+    {/* Show Results if Searching */}
+    {showSearchResults ? (
+      <View style={styles.searchResultsContainer}>
+        <Text style={styles.searchResultsTitle}>
+          Search Results ({filteredItems.length})
+        </Text>
+        <FlatList
+          data={filteredItems}
+          renderItem={renderSearchResult}
+          keyExtractor={(item) => item.id.toString()}
+          style={styles.searchResultsList}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <Text style={styles.noResultsText}>No items found</Text>
+          }
+        />
+      </View>
+    ) : (
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={() => navigation.navigate('RecordCreation')}
+        >
+          <Image 
+            source={require('../assets/add.png')} 
+            style={[styles.buttonImage, { width: buttonWidth }]} 
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={() => navigation.navigate('ListItems')}
+        >
+          <Image 
+            source={require('../assets/list.png')} 
+            style={[styles.buttonImage, { width: buttonWidth }]} 
+          />
+        </TouchableOpacity>
+      </View>
+    )}
+  </View>
+</SafeAreaView>
+
   );
 };
 
@@ -263,6 +254,21 @@ const styles = StyleSheet.create({
     height: 60,
     resizeMode: 'contain',
   },
+  searchInputWrapper: {
+  position: 'relative',
+  justifyContent: 'center',
+},
+clearButton: {
+  position: 'absolute',
+  right: 10,
+  top: 12,
+  zIndex: 10,
+},
+clearButtonText: {
+  color: '#fff',
+  fontSize: 20,
+},
+
 });
 
 export default EntryScreen;

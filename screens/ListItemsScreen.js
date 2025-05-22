@@ -1,89 +1,175 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  FlatList, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
   StyleSheet,
   Image,
-  ActivityIndicator
+  Alert,
+  SafeAreaView,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getAllItems } from '../services/storage';
 
 const ListItemsScreen = ({ navigation }) => {
   const [items, setItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Reload data when screen comes into focus
+  // Load items when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       loadItems();
-      return () => {}; // cleanup function
     }, [])
   );
+
+  // Filter items whenever search query or items change
+  useEffect(() => {
+    filterItems();
+  }, [searchQuery, items]);
 
   const loadItems = async () => {
     try {
       setLoading(true);
-      const storedItems = await getAllItems();
-      setItems(storedItems);
+      const allItems = await getAllItems();
+      setItems(allItems);
     } catch (error) {
-      console.error('Failed to load items:', error);
+      console.error('Error loading items:', error);
+      Alert.alert('Error', 'Failed to load items');
     } finally {
       setLoading(false);
     }
   };
 
+  const filterItems = () => {
+    if (searchQuery.trim() === '') {
+      setFilteredItems(items);
+    } else {
+      const lowercaseQuery = searchQuery.toLowerCase().trim();
+      const filtered = items.filter(item => 
+        item.name.toLowerCase().includes(lowercaseQuery)
+      );
+      setFilteredItems(filtered);
+    }
+  };
+
+  const handleItemPress = (itemId) => {
+    navigation.navigate('ItemDetail', { itemId });
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  };
+
   const renderItem = ({ item }) => (
     <TouchableOpacity 
       style={styles.itemContainer}
-      onPress={() => navigation.navigate('ItemDetail', { itemId: item.id })}
+      onPress={() => handleItemPress(item.id)}
     >
       <View style={styles.itemContent}>
-        <View style={styles.textContainer}>
-          <Text style={styles.itemName}>{item.name}</Text>
-          <Text style={styles.itemLocation}>{item.location || 'No location specified'}</Text>
+        {/* Thumbnail */}
+        <View style={styles.thumbnailContainer}>
+          {item.imageUri ? (
+            <Image source={{ uri: item.imageUri }} style={styles.thumbnail} />
+          ) : (
+            <View style={styles.noThumbnail}>
+              <Text style={styles.noThumbnailText}>No Image</Text>
+            </View>
+          )}
         </View>
-        
-        {item.imageUri ? (
-          <Image source={{ uri: item.imageUri }} style={styles.thumbnail} />
-        ) : (
-          <View style={styles.placeholderImage}>
-            <Text style={styles.placeholderText}>No Image</Text>
-          </View>
-        )}
+
+        {/* Item Details */}
+        <View style={styles.itemDetails}>
+          <Text style={styles.itemName}>{item.name}</Text>
+          {item.location && (
+            <Text style={styles.itemLocation}>{item.location}</Text>
+          )}
+          <Text style={styles.itemDescription} numberOfLines={2}>
+            {item.description}
+          </Text>
+          {item.createdAt && (
+            <Text style={styles.itemDate}>
+              Created: {formatDate(item.createdAt)}
+            </Text>
+          )}
+        </View>
+
+        {/* Arrow indicator */}
+        <View style={styles.arrowContainer}>
+          <Text style={styles.arrow}>›</Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
 
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color="#ffffff" />
+        <Text style={styles.loadingText}>Loading items...</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Where Is My Stuff?</Text>
-      
-      {loading ? (
-        <ActivityIndicator size="large" color="#ffffff" style={styles.loader} />
-      ) : items.length > 0 ? (
-        <FlatList
-          data={items}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContent}
-        />
-      ) : (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No items found</Text>
-          <Text style={styles.emptySubText}>Add new items using the button below</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search items by name..."
+            placeholderTextColor="#aaa"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+          />
         </View>
-      )}
-      
-      <TouchableOpacity 
-        style={styles.addButton}
-        onPress={() => navigation.navigate('RecordCreation')}
-      >
-        <Text style={styles.addButtonText}>+ Add New Item</Text>
-      </TouchableOpacity>
-    </View>
+
+        {/* Results Count */}
+        <View style={styles.resultsHeader}>
+          <Text style={styles.resultsCount}>
+            {searchQuery.trim() !== '' 
+              ? `${filteredItems.length} result${filteredItems.length !== 1 ? 's' : ''} found`
+              : `${items.length} total item${items.length !== 1 ? 's' : ''}`
+            }
+          </Text>
+        </View>
+
+        {/* Items List */}
+        <FlatList
+          data={filteredItems}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          style={styles.list}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                {searchQuery.trim() !== '' 
+                  ? 'No items found matching your search'
+                  : 'No items saved yet'
+                }
+              </Text>
+              {searchQuery.trim() === '' && (
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={() => navigation.navigate('RecordCreation')}
+                >
+                  <Text style={styles.addButtonText}>Add Your First Item</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          }
+        />
+      </View>
+    </SafeAreaView>
   );
 };
 
@@ -91,31 +177,74 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#291528',
-    padding: 16,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  content: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchContainer: {
+    marginBottom: 16,
+  },
+  searchInput: {
+    backgroundColor: '#3d2038',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     color: '#ffffff',
-    marginBottom: 20,
-    textAlign: 'center',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#6a3b63',
   },
-  listContent: {
-    paddingBottom: 80, // Space for the Add button
+  resultsHeader: {
+    marginBottom: 16,
+  },
+  resultsCount: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  list: {
+    flex: 1,
   },
   itemContainer: {
     backgroundColor: '#3d2038',
     borderRadius: 8,
-    padding: 16,
     marginBottom: 12,
+    padding: 16,
   },
   itemContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  textContainer: {
+  thumbnailContainer: {
+    marginRight: 16,
+  },
+  thumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+  },
+  noThumbnail: {
+    width: 60,
+    height: 60,
+    backgroundColor: '#291528',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noThumbnailText: {
+    color: '#aaa',
+    fontSize: 10,
+    textAlign: 'center',
+  },
+  itemDetails: {
     flex: 1,
-    marginRight: 10,
+    marginRight: 16,
   },
   itemName: {
     fontSize: 18,
@@ -124,60 +253,55 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   itemLocation: {
-    fontSize: 16,
+    fontSize: 14,
+    color: '#6a3b63',
+    marginBottom: 4,
+  },
+  itemDescription: {
+    fontSize: 14,
     color: '#cccccc',
+    marginBottom: 4,
   },
-  thumbnail: {
-    width: 60,
-    height: 60,
-    borderRadius: 4,
+  itemDate: {
+    fontSize: 12,
+    color: '#aaa',
   },
-  placeholderImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 4,
-    backgroundColor: '#4d304a',
+  arrowContainer: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  placeholderText: {
-    color: '#aaaaaa',
-    fontSize: 10,
-    textAlign: 'center',
-  },
-  addButton: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    backgroundColor: '#6a3b63',
-    borderRadius: 30,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-  },
-  addButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
+  arrow: {
+    fontSize: 24,
+    color: '#6a3b63',
     fontWeight: 'bold',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingTop: 60,
   },
   emptyText: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  emptySubText: {
-    color: '#aaaaaa',
-    fontSize: 16,
+    fontSize: 18,
+    color: '#aaa',
     textAlign: 'center',
+    marginBottom: 20,
   },
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
+  addButton: {
+    backgroundColor: '#6936d4',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  addButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  loadingText: {
+    color: '#ffffff',
+    marginTop: 10,
+    fontSize: 16,
   },
 });
 

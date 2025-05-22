@@ -10,6 +10,9 @@ import {
   SafeAreaView,
   TextInput,
   ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getAllItems } from '../services/storage';
@@ -58,7 +61,12 @@ const ListItemsScreen = ({ navigation }) => {
   };
 
   const handleItemPress = (itemId) => {
-    navigation.navigate('ItemDetail', { itemId });
+    // Dismiss keyboard first, then navigate
+    Keyboard.dismiss();
+    // Use setTimeout to ensure keyboard dismissal completes before navigation
+    setTimeout(() => {
+      navigation.navigate('ItemDetail', { itemId });
+    }, 100);
   };
 
   const formatDate = (dateString) => {
@@ -71,6 +79,7 @@ const ListItemsScreen = ({ navigation }) => {
     <TouchableOpacity 
       style={styles.itemContainer}
       onPress={() => handleItemPress(item.id)}
+      activeOpacity={0.7}
     >
       <View style={styles.itemContent}>
         {/* Thumbnail */}
@@ -119,56 +128,64 @@ const ListItemsScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search items by name..."
-            placeholderTextColor="#aaa"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <View style={styles.content}>
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search items by name..."
+              placeholderTextColor="#aaa"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+              blurOnSubmit={false}
+            />
+          </View>
+
+          {/* Results Count */}
+          <View style={styles.resultsHeader}>
+            <Text style={styles.resultsCount}>
+              {searchQuery.trim() !== '' 
+                ? `${filteredItems.length} result${filteredItems.length !== 1 ? 's' : ''} found`
+                : `${items.length} total item${items.length !== 1 ? 's' : ''}`
+              }
+            </Text>
+          </View>
+
+          {/* Items List */}
+          <FlatList
+            data={filteredItems}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id.toString()}
+            style={styles.list}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>
+                  {searchQuery.trim() !== '' 
+                    ? 'No items found matching your search'
+                    : 'No items saved yet'
+                  }
+                </Text>
+                {searchQuery.trim() === '' && (
+                  <TouchableOpacity
+                    style={styles.addButton}
+                    onPress={() => navigation.navigate('RecordCreation')}
+                  >
+                    <Text style={styles.addButtonText}>Add Your First Item</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            }
           />
         </View>
-
-        {/* Results Count */}
-        <View style={styles.resultsHeader}>
-          <Text style={styles.resultsCount}>
-            {searchQuery.trim() !== '' 
-              ? `${filteredItems.length} result${filteredItems.length !== 1 ? 's' : ''} found`
-              : `${items.length} total item${items.length !== 1 ? 's' : ''}`
-            }
-          </Text>
-        </View>
-
-        {/* Items List */}
-        <FlatList
-          data={filteredItems}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id.toString()}
-          style={styles.list}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                {searchQuery.trim() !== '' 
-                  ? 'No items found matching your search'
-                  : 'No items saved yet'
-                }
-              </Text>
-              {searchQuery.trim() === '' && (
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={() => navigation.navigate('RecordCreation')}
-                >
-                  <Text style={styles.addButtonText}>Add Your First Item</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          }
-        />
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -177,6 +194,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#291528',
+  },
+  keyboardAvoidingView: {
+    flex: 1,
   },
   content: {
     flex: 1,

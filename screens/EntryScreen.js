@@ -8,7 +8,10 @@ import {
   SafeAreaView, 
   TextInput, 
   FlatList, 
-  Text 
+  Text,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import { getAllItems } from '../services/storage';
 
@@ -55,13 +58,19 @@ const EntryScreen = ({ navigation }) => {
   };
 
   const handleItemPress = (itemId) => {
-    navigation.navigate('ItemDetail', { itemId });
+    // Dismiss keyboard first, then navigate
+    Keyboard.dismiss();
+    // Use setTimeout to ensure keyboard dismissal completes before navigation
+    setTimeout(() => {
+      navigation.navigate('ItemDetail', { itemId });
+    }, 100);
   };
 
   const renderSearchResult = ({ item }) => (
     <TouchableOpacity 
       style={styles.searchResultItem}
       onPress={() => handleItemPress(item.id)}
+      activeOpacity={0.7}
     >
       <View style={styles.searchResultContent}>
         {item.imageUri ? (
@@ -78,75 +87,95 @@ const EntryScreen = ({ navigation }) => {
 
   return (
 <SafeAreaView style={styles.container}>
-  <View style={styles.content}>
-    {/* Logo */}
-    <View style={styles.logoContainer}>
-      <Image 
-        source={require('../assets/where.png')} 
-        style={[styles.logo, { width: logoSize, height: logoSize }]} 
-      />
-    </View>
+  <KeyboardAvoidingView 
+    style={styles.keyboardAvoidingView}
+    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+  >
+    <View style={styles.content}>
+      {/* Logo - Only show when not searching or make it smaller */}
+      {!showSearchResults && (
+        <View style={styles.logoContainer}>
+          <Image 
+            source={require('../assets/where.png')} 
+            style={[styles.logo, { width: logoSize, height: logoSize }]} 
+          />
+        </View>
+      )}
+      
+      {/* Show smaller logo when searching */}
+      {showSearchResults && (
+        <View style={styles.smallLogoContainer}>
+          <Image 
+            source={require('../assets/where.png')} 
+            style={styles.smallLogo} 
+          />
+        </View>
+      )}
 
-    {/* Search Bar */}
-    <View style={styles.searchContainer}>
-      <View style={styles.searchInputWrapper}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search for items..."
-          placeholderTextColor="#aaa"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          returnKeyType="search"
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
-            <Text style={styles.clearButtonText}>×</Text>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputWrapper}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search for items..."
+            placeholderTextColor="#aaa"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+            blurOnSubmit={false}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
+              <Text style={styles.clearButtonText}>×</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* Show Results if Searching */}
+      {showSearchResults ? (
+        <View style={styles.searchResultsContainer}>
+          <Text style={styles.searchResultsTitle}>
+            Search Results ({filteredItems.length})
+          </Text>
+          <FlatList
+            data={filteredItems}
+            renderItem={renderSearchResult}
+            keyExtractor={(item) => item.id.toString()}
+            style={styles.searchResultsList}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={
+              <Text style={styles.noResultsText}>No items found</Text>
+            }
+          />
+        </View>
+      ) : (
+        <View style={styles.buttonsContainer}>
+          <TouchableOpacity 
+            style={styles.button}
+            onPress={() => navigation.navigate('RecordCreation')}
+          >
+            <Image 
+              source={require('../assets/add.png')} 
+              style={[styles.buttonImage, { width: buttonWidth }]} 
+            />
           </TouchableOpacity>
-        )}
-      </View>
+
+          <TouchableOpacity 
+            style={styles.button}
+            onPress={() => navigation.navigate('ListItems')}
+          >
+            <Image 
+              source={require('../assets/list.png')} 
+              style={[styles.buttonImage, { width: buttonWidth }]} 
+            />
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
-
-    {/* Show Results if Searching */}
-    {showSearchResults ? (
-      <View style={styles.searchResultsContainer}>
-        <Text style={styles.searchResultsTitle}>
-          Search Results ({filteredItems.length})
-        </Text>
-        <FlatList
-          data={filteredItems}
-          renderItem={renderSearchResult}
-          keyExtractor={(item) => item.id.toString()}
-          style={styles.searchResultsList}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <Text style={styles.noResultsText}>No items found</Text>
-          }
-        />
-      </View>
-    ) : (
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => navigation.navigate('RecordCreation')}
-        >
-          <Image 
-            source={require('../assets/add.png')} 
-            style={[styles.buttonImage, { width: buttonWidth }]} 
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => navigation.navigate('ListItems')}
-        >
-          <Image 
-            source={require('../assets/list.png')} 
-            style={[styles.buttonImage, { width: buttonWidth }]} 
-          />
-        </TouchableOpacity>
-      </View>
-    )}
-  </View>
+  </KeyboardAvoidingView>
 </SafeAreaView>
 
   );
@@ -156,6 +185,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#291528',
+  },
+  keyboardAvoidingView: {
+    flex: 1,
   },
   content: {
     flex: 1,
@@ -236,6 +268,15 @@ const styles = StyleSheet.create({
     maxHeight: height * 0.5,
   },
   logo: {
+    resizeMode: 'contain',
+  },
+  smallLogoContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  smallLogo: {
+    width: 80,
+    height: 80,
     resizeMode: 'contain',
   },
   buttonsContainer: {

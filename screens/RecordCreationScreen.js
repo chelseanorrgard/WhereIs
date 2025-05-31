@@ -19,7 +19,7 @@ import { saveItem, getItemById, updateItem } from '../services/storage';
 const { width } = Dimensions.get('window');
 
 const RecordCreationScreen = ({ navigation, route }) => {
-  // Check if we're in edit mode by looking for itemId in route params
+  // Check if in edit mode by looking for itemId in route params
   const { itemId } = route.params || {};
   const isEditMode = !!itemId;
   

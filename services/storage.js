@@ -1,7 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import * as FileSystem from 'expo-file-system';
 
-// Constants
 const STORAGE_KEY = 'whereIs_items';
 const BACKUP_FILE = FileSystem.documentDirectory + 'whereIs_backup.json';
 
@@ -12,15 +11,12 @@ const BACKUP_FILE = FileSystem.documentDirectory + 'whereIs_backup.json';
  */
 export const saveItem = async (item) => {
   try {
-    // Validate required fields
     if (!item.name || !item.description) {
       throw new Error('Item name and description are required');
     }
     
-    // Get existing items
     const existingItems = await getAllItems();
     
-    // Create a new item with a unique ID and metadata
     const newItem = {
       ...item,
       id: generateUniqueId(),
@@ -28,20 +24,15 @@ export const saveItem = async (item) => {
       updatedAt: new Date().toISOString(),
     };
     
-    // If the item has an image, ensure it's properly stored
     if (newItem.imageUri) {
-      // Convert image to permanent storage if needed
       const permanentUri = await ensurePermanentImage(newItem.imageUri);
       newItem.imageUri = permanentUri;
     }
     
-    // Add new item to the array
     const updatedItems = [...existingItems, newItem];
     
-    // Save with data integrity verification
     await saveItemsWithVerification(updatedItems);
     
-    // Create a backup after successful save
     await createBackup(updatedItems);
     
     return newItem;
@@ -59,7 +50,6 @@ export const getAllItems = async () => {
   try {
     const itemsJson = await SecureStore.getItemAsync(STORAGE_KEY);
     
-    // If no items found, check if we have a backup
     if (!itemsJson) {
       return await restoreFromBackup() || [];
     }
@@ -67,7 +57,6 @@ export const getAllItems = async () => {
     return JSON.parse(itemsJson) || [];
   } catch (error) {
     console.error('Error getting items:', error);
-    // Try to restore from backup in case of corruption
     const backupItems = await restoreFromBackup();
     if (backupItems) {
       return backupItems;
@@ -98,40 +87,32 @@ export const getItemById = async (id) => {
  */
 export const updateItem = async (updatedItem) => {
   try {
-    // Validate required fields
     if (!updatedItem.name || !updatedItem.description) {
       throw new Error('Item name and description are required');
     }
     
     const items = await getAllItems();
     
-    // Find the existing item to update
     const existingItemIndex = items.findIndex(item => item.id === updatedItem.id);
     if (existingItemIndex === -1) {
       throw new Error('Item not found');
     }
     
-    // If the image has changed and it's a temporary URI, make it permanent
     if (updatedItem.imageUri && updatedItem.imageUri !== items[existingItemIndex].imageUri) {
       updatedItem.imageUri = await ensurePermanentImage(updatedItem.imageUri);
     }
     
-    // Update metadata
     updatedItem.updatedAt = new Date().toISOString();
     
-    // Preserve creation date
     if (!updatedItem.createdAt) {
       updatedItem.createdAt = items[existingItemIndex].createdAt;
     }
     
-    // Update the item in the array
     const updatedItems = [...items];
     updatedItems[existingItemIndex] = updatedItem;
     
-    // Save with verification
     await saveItemsWithVerification(updatedItems);
     
-    // Create a backup after successful update
     await createBackup(updatedItems);
     
     return updatedItem;
@@ -150,29 +131,23 @@ export const deleteItem = async (id) => {
   try {
     const items = await getAllItems();
     
-    // Find the item to delete
     const itemToDelete = items.find(item => item.id === id);
     if (!itemToDelete) {
       throw new Error('Item not found');
     }
     
-    // If the item has an image, clean it up
     if (itemToDelete.imageUri && itemToDelete.imageUri.startsWith(FileSystem.documentDirectory)) {
       try {
         await FileSystem.deleteAsync(itemToDelete.imageUri);
       } catch (imageError) {
         console.warn('Could not delete image file:', imageError);
-        // Continue with deletion even if image cleanup fails
       }
     }
     
-    // Filter out the deleted item
     const filteredItems = items.filter(item => item.id !== id);
     
-    // Save with verification
     await saveItemsWithVerification(filteredItems);
     
-    // Create a backup after successful deletion
     await createBackup(filteredItems);
     
     return true;
@@ -238,19 +213,16 @@ export const importData = async (filePath) => {
     const fileContent = await FileSystem.readAsStringAsync(filePath);
     const importedItems = JSON.parse(fileContent);
     
-    // Validate imported data structure
     if (!Array.isArray(importedItems)) {
       throw new Error('Invalid import format');
     }
     
-    // Basic validation of each item
     for (const item of importedItems) {
       if (!item.id || !item.name || !item.description) {
         throw new Error('Some items are missing required fields');
       }
     }
     
-    // Save with verification
     await saveItemsWithVerification(importedItems);
     
     return importedItems;
@@ -278,10 +250,8 @@ const generateUniqueId = () => {
 const saveItemsWithVerification = async (items) => {
   const itemsJson = JSON.stringify(items);
   
-  // Save to SecureStore (encrypted)
   await SecureStore.setItemAsync(STORAGE_KEY, itemsJson);
   
-  // Verify the data was saved correctly
   const verificationJson = await SecureStore.getItemAsync(STORAGE_KEY);
   
   if (verificationJson !== itemsJson) {
@@ -302,7 +272,6 @@ const createBackup = async (items) => {
     );
   } catch (error) {
     console.warn('Failed to create backup:', error);
-    // Don't throw error as this is a non-critical operation
   }
 };
 
@@ -332,22 +301,18 @@ const restoreFromBackup = async () => {
  * @returns {Promise<string>} The permanent URI
  */
 const ensurePermanentImage = async (uri) => {
-  // Check if the image is already in a permanent location
   if (uri.startsWith(FileSystem.documentDirectory)) {
     return uri;
   }
   
   try {
-    // Create a unique filename for the image
     const filename = FileSystem.documentDirectory + 'images/' + generateUniqueId() + '.jpg';
     
-    // Ensure the directory exists
     const dirInfo = await FileSystem.getInfoAsync(FileSystem.documentDirectory + 'images');
     if (!dirInfo.exists) {
       await FileSystem.makeDirectoryAsync(FileSystem.documentDirectory + 'images', { intermediates: true });
     }
     
-    // Copy the image from temporary location to permanent storage
     await FileSystem.copyAsync({
       from: uri,
       to: filename
@@ -356,7 +321,6 @@ const ensurePermanentImage = async (uri) => {
     return filename;
   } catch (error) {
     console.error('Error making image permanent:', error);
-    // Return the original URI if we fail to make it permanent
     return uri;
   }
 };

@@ -10,10 +10,8 @@ import ItemDetailScreen from './screens/ItemDetailScreen';
 
 const Stack = createStackNavigator();
 
-// Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
-// Custom Header Component
 const CustomHeader = ({ title, navigation, route }) => {
   const currentRouteName = route.name;
   
@@ -56,14 +54,12 @@ export default function App() {
   useEffect(() => {
     async function prepare() {
       try {
-        // Your preparation code here (loading fonts, data, etc.)
         await new Promise(resolve => setTimeout(resolve, 3000));
         
       } catch (e) {
         console.warn(e);
       } finally {
         setIsReady(true);
-        // Hide the splash screen after everything is ready
         await SplashScreen.hideAsync();
       }
     }

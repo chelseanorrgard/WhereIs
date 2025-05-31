@@ -1,13 +1,17 @@
-import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, TouchableOpacity, Text, StyleSheet, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import * as SplashScreen from 'expo-splash-screen';
 import EntryScreen from './screens/EntryScreen';
 import ListItemsScreen from './screens/ListItemsScreen';
 import RecordCreationScreen from './screens/RecordCreationScreen';
 import ItemDetailScreen from './screens/ItemDetailScreen';
 
 const Stack = createStackNavigator();
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 // Custom Header Component
 const CustomHeader = ({ title, navigation, route }) => {
@@ -47,6 +51,39 @@ const CustomHeader = ({ title, navigation, route }) => {
 };
 
 export default function App() {
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        // Your preparation code here (loading fonts, data, etc.)
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setIsReady(true);
+        // Hide the splash screen after everything is ready
+        await SplashScreen.hideAsync();
+      }
+    }
+
+    prepare();
+  }, []);
+
+  if (!isReady) {
+    return (
+      <View style={styles.splashContainer}>
+        <Image 
+          source={require('./assets/splash-icon.png')} 
+          style={styles.splashIcon}
+          resizeMode="contain"
+        />
+        <Text style={styles.splashText}>by Chelsea Norrgård</Text>
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator 
@@ -146,5 +183,22 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  splashContainer: {
+    flex: 1,
+    backgroundColor: '#000000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  splashIcon: {
+    width: 200,
+    height: 200,
+    borderRadius: 20,
+  },
+  splashText: {
+    color: 'white',
+    fontSize: 16,
+    marginTop: 20,
+    fontFamily: 'System',
   },
 });

@@ -174,7 +174,7 @@ npx expo build:ios
 
 ## 🤝 Contributing
 
-We'd love your help making this app even more awesome!
+I'd love your help making this app even more awesome!
 
 1. 🍴 Fork the repository
 2. 🌿 Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -187,8 +187,8 @@ We'd love your help making this app even more awesome!
 ## 🙏 Acknowledgments
 
 - 🚀 Built with love using [Expo](https://expo.dev/)
-- 🎨 Icons and assets designed specifically for this application
-- 👥 Huge thanks to the React Native community for ongoing support and inspiration
+- 🎨 Icons and assets designed specifically for this application using VistaCreate and App Icon Generator
+- 👥 Built using React Native community resources
 - ☕ Powered by countless cups of coffee and determination
 
 ---
@@ -198,19 +198,15 @@ We'd love your help making this app even more awesome!
 Based on the original requirements, here are some exciting features that could be added:
 
 ### 🔍 Advanced Search & Filtering
-- Smart search with partial matching
 - Filter by location, date added, or item type
 - Search history and suggestions
 
 ### 📸 Enhanced Photo Management  
 - Multiple photos per item
-- Photo compression and optimization
 - Before/after location photos
 
 ### 🗺️ GPS & Location Services
-- Automatic GPS location capture
 - Location-based reminders
-- Map view of your items
 
 ### ✏️ Advanced Editing
 - Batch edit multiple items
@@ -219,7 +215,6 @@ Based on the original requirements, here are some exciting features that could b
 
 ### 🔐 Security & Backup
 - Cloud sync and backup
-- Data encryption
 - User authentication
 
 ---

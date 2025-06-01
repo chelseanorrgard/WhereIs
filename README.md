@@ -98,18 +98,18 @@ npm run android
 
 ```
 WhereIs/
-├── 📱 App.js                    # Main app component
-├── 🚪 index.js                  # App entry point
-├── ⚙️ app.json                  # Expo configuration
-├── 📦 package.json              # Dependencies and scripts
-├── 🖼️ assets/                   # Images and static assets
+├── 📱 App.js                   # Main app component
+├── 🚪 index.js                 # App entry point
+├── ⚙️ app.json                 # Expo configuration
+├── 📦 package.json             # Dependencies and scripts
+├── 🖼️ assets/                  # Images and static assets
 │   ├── icon.png                # App icon
 │   ├── splash-icon.png         # Splash screen icon
 │   ├── add.png                 # Add button icon
 │   ├── list.png                # List view icon
 │   ├── save.png                # Save button icon
 │   └── where.png               # Location icon
-├── 📱 screens/                  # App screens/pages
+├── 📱 screens/                 # App screens/pages
 │   ├── EntryScreen.js          # Main entry screen
 │   ├── ItemDetailScreen.js     # Individual item details
 │   ├── ListItemsScreen.js      # Items list view
